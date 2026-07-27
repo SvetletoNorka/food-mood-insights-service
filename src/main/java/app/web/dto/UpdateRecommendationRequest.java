@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class UpdateRecommendationRequest {
 
-    @NotNull
+    @NotNull(message = "Status is required")
     private RecommendationStatus status;
 }

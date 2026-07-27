@@ -19,14 +19,14 @@ public class CreateRecommendationRequest {
 
     private UUID mealId;
 
-    @NotNull
-    @Min(1)
-    @Max(10)
+    @NotNull(message = "Mood score is required")
+    @Min(value = 1, message = "Mood score must be between 1 and 10")
+    @Max(value = 10, message = "Mood score must be between 1 and 10")
     private Integer moodScore;
 
-    @NotNull
-    @Min(1)
-    @Max(10)
+    @NotNull(message = "Energy score is required")
+    @Min(value = 1, message = "Energy score must be between 1 and 10")
+    @Max(value = 10, message = "Energy score must be between 1 and 10")
     private Integer energyScore;
 
     private List<String> foodNames;

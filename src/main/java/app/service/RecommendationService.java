@@ -1,5 +1,6 @@
 package app.service;
 
+import app.exception.InvalidRecommendationOperationException;
 import app.exception.RecommendationNotFoundException;
 import app.model.Recommendation;
 import app.model.RecommendationStatus;
@@ -67,7 +68,13 @@ public class RecommendationService {
                         "Recommendation with id [%s] not found.".formatted(recommendationId)));
 
         if (request.getStatus() == RecommendationStatus.ACTIVE) {
-            throw new IllegalArgumentException("Status cannot be set back to ACTIVE.");
+            throw new InvalidRecommendationOperationException("Status cannot be set back to ACTIVE.");
+        }
+
+        if (recommendation.getStatus() != RecommendationStatus.ACTIVE) {
+            throw new InvalidRecommendationOperationException(
+                    "Only ACTIVE recommendations can be updated. Current status: "
+                            + recommendation.getStatus());
         }
 
         recommendation.setStatus(request.getStatus());
