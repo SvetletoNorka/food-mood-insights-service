@@ -10,6 +10,7 @@ import app.web.dto.RecommendationResponse;
 import app.web.dto.UpdateRecommendationRequest;
 import app.web.mapper.RecommendationMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -48,7 +50,10 @@ public class RecommendationService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return RecommendationMapper.toResponse(recommendationRepository.save(recommendation));
+        Recommendation saved = recommendationRepository.save(recommendation);
+        log.info("Created recommendation id={} for userId={} mealId={}",
+                saved.getId(), userId, request.getMealId());
+        return RecommendationMapper.toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -57,9 +62,12 @@ public class RecommendationService {
                 ? recommendationRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
                 : recommendationRepository.findAllByUserIdAndStatusOrderByCreatedAtDesc(userId, status);
 
-        return recommendations.stream()
+        List<RecommendationResponse> responses = recommendations.stream()
                 .map(RecommendationMapper::toResponse)
                 .toList();
+        log.info("Retrieved recommendations for userId={}, status={}, count={}",
+                userId, status, responses.size());
+        return responses;
     }
 
     public RecommendationResponse updateStatus(UUID recommendationId, UpdateRecommendationRequest request) {
@@ -80,7 +88,10 @@ public class RecommendationService {
         recommendation.setStatus(request.getStatus());
         recommendation.setUpdatedAt(LocalDateTime.now());
 
-        return RecommendationMapper.toResponse(recommendationRepository.save(recommendation));
+        RecommendationResponse response = RecommendationMapper.toResponse(
+                recommendationRepository.save(recommendation));
+        log.info("Updated recommendation id={} to status={}", recommendationId, request.getStatus());
+        return response;
     }
 
     private InsightContent buildInsight(CreateRecommendationRequest request) {
