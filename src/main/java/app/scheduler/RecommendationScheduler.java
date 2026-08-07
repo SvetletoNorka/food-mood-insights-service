@@ -25,7 +25,7 @@ public class RecommendationScheduler {
                 dismissed, cutoff);
     }
 
-    @Scheduled(fixedRate = 10_000, initialDelay = 5_000)
+    @Scheduled(fixedRate = 1_800_000, initialDelay = 60_000)
     public void reportActiveRecommendationsCount() {
         long count = recommendationService.countActiveRecommendations();
         log.info("Scheduled fixed-rate job: active recommendations count={}", count);
