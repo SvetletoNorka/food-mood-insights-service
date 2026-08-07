@@ -11,6 +11,8 @@ import app.web.dto.UpdateRecommendationRequest;
 import app.web.mapper.RecommendationMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static app.config.CacheConfiguration.RECOMMENDATIONS_CACHE;
 
 @Slf4j
 @Service
@@ -27,6 +31,7 @@ public class RecommendationService {
 
     private final RecommendationRepository recommendationRepository;
 
+    @CacheEvict(cacheNames = RECOMMENDATIONS_CACHE, allEntries = true)
     public RecommendationResponse create(UUID userId, CreateRecommendationRequest request) {
         InsightContent content = buildInsight(request);
 
@@ -56,6 +61,7 @@ public class RecommendationService {
         return RecommendationMapper.toResponse(saved);
     }
 
+    @Cacheable(cacheNames = RECOMMENDATIONS_CACHE, key = "#userId + '-' + #status")
     @Transactional(readOnly = true)
     public List<RecommendationResponse> findByUser(UUID userId, RecommendationStatus status) {
         List<Recommendation> recommendations = status == null
@@ -70,6 +76,7 @@ public class RecommendationService {
         return responses;
     }
 
+    @CacheEvict(cacheNames = RECOMMENDATIONS_CACHE, allEntries = true)
     public RecommendationResponse updateStatus(UUID recommendationId, UpdateRecommendationRequest request) {
         Recommendation recommendation = recommendationRepository.findById(recommendationId)
                 .orElseThrow(() -> new RecommendationNotFoundException(
@@ -92,6 +99,30 @@ public class RecommendationService {
                 recommendationRepository.save(recommendation));
         log.info("Updated recommendation id={} to status={}", recommendationId, request.getStatus());
         return response;
+    }
+
+    @CacheEvict(cacheNames = RECOMMENDATIONS_CACHE, allEntries = true)
+    public int dismissStaleActiveRecommendations(LocalDateTime cutoff) {
+        List<Recommendation> stale = recommendationRepository
+                .findAllByStatusAndCreatedAtBefore(RecommendationStatus.ACTIVE, cutoff);
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Recommendation recommendation : stale) {
+            recommendation.setStatus(RecommendationStatus.DISMISSED);
+            recommendation.setUpdatedAt(now);
+        }
+
+        if (!stale.isEmpty()) {
+            recommendationRepository.saveAll(stale);
+        }
+
+        log.info("Dismissed {} stale ACTIVE recommendations older than {}", stale.size(), cutoff);
+        return stale.size();
+    }
+
+    @Transactional(readOnly = true)
+    public long countActiveRecommendations() {
+        return recommendationRepository.countByStatus(RecommendationStatus.ACTIVE);
     }
 
     private InsightContent buildInsight(CreateRecommendationRequest request) {

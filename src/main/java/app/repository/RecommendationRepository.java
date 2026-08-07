@@ -5,6 +5,7 @@ import app.model.RecommendationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,4 +15,8 @@ public interface RecommendationRepository extends JpaRepository<Recommendation, 
     List<Recommendation> findAllByUserIdOrderByCreatedAtDesc(UUID userId);
 
     List<Recommendation> findAllByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, RecommendationStatus status);
+
+    List<Recommendation> findAllByStatusAndCreatedAtBefore(RecommendationStatus status, LocalDateTime cutoff);
+
+    long countByStatus(RecommendationStatus status);
 }

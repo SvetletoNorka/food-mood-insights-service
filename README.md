@@ -14,6 +14,10 @@ After a user logs wellness scores for a meal in the main app, this service recei
 - Rule-based insight messages based on mood, energy, and macros
 - Bean Validation on request payloads
 - Centralized exception handling with JSON error responses
+- Spring Cache for recommendation reads (`@Cacheable` / `@CacheEvict`)
+- Scheduled jobs:
+  - Cron (`0 0 3 * * *`): dismiss ACTIVE recommendations older than 30 days
+  - Fixed rate (every 30 minutes): log active recommendations count
 
 ## Tech Stack
 
@@ -24,7 +28,7 @@ After a user logs wellness scores for a meal in the main app, this service recei
 | Web | Spring Web (REST) |
 | Persistence | Spring Data JPA, Hibernate |
 | Database | MySQL |
-| Other | Lombok, Bean Validation |
+| Other | Lombok, Bean Validation, Spring Cache |
 
 ## Integration with Main Application
 
@@ -102,9 +106,11 @@ Database: `food_mood_insights_svc`
 
 ```
 src/main/java/app/
+├── config/              # CacheConfiguration (caching + scheduling)
 ├── exception/           # Domain exceptions
 ├── model/               # Recommendation entity and status enum
 ├── repository/          # Spring Data JPA
+├── scheduler/           # Cron and fixed-rate jobs
 ├── service/             # Recommendation business logic
 └── web/                 # REST controller, DTOs, mapper, exception handler
 ```
